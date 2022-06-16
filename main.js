@@ -3,14 +3,16 @@ const fastcsv = require('fast-csv');
 const fs = require('fs');
 const cron = require('node-cron');
 var exec = require('child_process').exec;
-var dayjs = require('dayjs')
+var dayjs = require('dayjs');
+const { get } = require('lodash');
 const instance = axios.create({
   baseURL: 'https://xapi.supercharge-srp.co/job-search/graphql?country=id&isSmartSearch=true',
   timeout: 100000
 });
 
 console.log('run');
-getHeaderJob()
+// getHeaderJob()
+crawlingDetailData()
 cron.schedule('* * * * *', async function() {
   // try {
   //   console.log('cron ok');
@@ -64,7 +66,7 @@ async function getHeaderJob () {
     }
 
     for (const e of data) {
-      var resDetail = await (instance.post('',{"query":"query getJobDetail($jobId: String, $locale: String, $country: String, $candidateId: ID, $solVisitorId: String, $flight: String) {\n  jobDetail(\n    jobId: $jobId\n    locale: $locale\n    country: $country\n    candidateId: $candidateId\n    solVisitorId: $solVisitorId\n    flight: $flight\n  ) {\n    id\n    pageUrl\n    jobTitleSlug\n    applyUrl {\n      url\n      isExternal\n    }\n    isExpired\n    isConfidential\n    isClassified\n    accountNum\n    advertisementId\n    subAccount\n    showMoreJobs\n    adType\n    header {\n      banner {\n        bannerUrls {\n          large\n        }\n      }\n      salary {\n        max\n        min\n        type\n        extraInfo\n        currency\n        isVisible\n      }\n      logoUrls {\n        small\n        medium\n        large\n        normal\n      }\n      jobTitle\n      company {\n        name\n        url\n        slug\n        advertiserId\n      }\n      review {\n        rating\n        numberOfReviewer\n      }\n      expiration\n      postedDate\n      postedAt\n      isInternship\n    }\n    companyDetail {\n      companyWebsite\n      companySnapshot {\n        avgProcessTime\n        registrationNo\n        employmentAgencyPersonnelNumber\n        employmentAgencyNumber\n        telephoneNumber\n        workingHours\n        website\n        facebook\n        size\n        dressCode\n        nearbyLocations\n      }\n      companyOverview {\n        html\n      }\n      videoUrl\n      companyPhotos {\n        caption\n        url\n      }\n    }\n    jobDetail {\n      summary\n      jobDescription {\n        html\n      }\n      jobRequirement {\n        careerLevel\n        yearsOfExperience\n        qualification\n        fieldOfStudy\n        industryValue {\n          value\n          label\n        }\n        skills\n        employmentType\n        languages\n        postedDate\n        closingDate\n        jobFunctionValue {\n          code\n          name\n          children {\n            code\n            name\n          }\n        }\n        benefits\n      }\n      whyJoinUs\n    }\n    location {\n      location\n      locationId\n      omnitureLocationId\n    }\n    sourceCountry\n  }\n}\n", "variables": {"jobId": `${e.id}`,"country": "id","locale": "id","candidateId": "","solVisitorId": "69217709-bfc6-4502-ab46-4e7d01fce568"}}))
+      var resDetail = await (instance.post('',{"query":"query getJobDetail($jobId: String, $locale: String, $country: String, $candidateId: ID, $solVisitorId: String, $flight: String) {\n  jobDetail(\n    jobId: $jobId\n    locale: $locale\n    country: $country\n    candidateId: $candidateId\n    solVisitorId: $solVisitorId\n    flight: $flight\n  ) {\n    id\n    pageUrl\n    jobTitleSlug\n    applyUrl {\n      url\n      isExternal\n    }\n    isExpired\n    isConfidential\n    isClassified\n    accountNum\n    advertisementId\n    subAccount\n    showMoreJobs\n    adType\n    header {\n      banner {\n        bannerUrls {\n          large\n        }\n      }\n      salary {\n        max\n        min\n        type\n        extraInfo\n        currency\n        isVisible\n      }\n      logoUrls {\n        small\n        medium\n        large\n        normal\n      }\n      jobTitle\n      company {\n        name\n        url\n        slug\n        advertiserId\n      }\n      review {\n        rating\n        numberOfReviewer\n      }\n      expiration\n      postedDate\n      postedAt\n      isInternship\n    }\n    companyDetail {\n      companyWebsite\n      companySnapshot {\n        avgProcessTime\n        registrationNo\n        employmentAgencyPersonnelNumber\n        employmentAgencyNumber\n        telephoneNumber\n        workingHours\n        website\n        facebook\n        size\n        dressCode\n        nearbyLocations\n      }\n      companyOverview {\n        html\n      }\n      videoUrl\n      companyPhotos {\n        caption\n        url\n      }\n    }\n    jobDetail {\n      summary\n      jobDescription {\n        html\n      }\n      jobRequirement {\n        careerLevel\n        yearsOfExperience\n        qualification\n        fieldOfStudy\n        industryValue {\n          value\n          label\n        }\n        skills\n        employmentType\n        languages\n        postedDate\n        closingDate\n        jobFunctionValue {\n          code\n          name\n          children {\n            code\n            name\n          }\n        }\n        benefits\n      }\n      whyJoinUs\n    }\n    location {\n      location\n      locationId\n      omnitureLocationId\n    }\n    sourceCountry\n  }\n}\n", "variables": {"jobId": `${e.employment}`,"country": "id","locale": "id","candidateId": "","solVisitorId": "69217709-bfc6-4502-ab46-4e7d01fce568"}}))
       var jobDescription= resDetail.data.data.jobDetail?.jobDetail?.jobDescription?.html ?? '';
       e.description = jobDescription
       await new Promise(resolve => setTimeout(resolve, 5000));
@@ -81,8 +83,63 @@ async function getHeaderJob () {
   }
 }
 
+async function getDetailJob(id) {
+    var resDetail = await (instance.post('',{"query":"query getJobDetail($jobId: String, $locale: String, $country: String, $candidateId: ID, $solVisitorId: String, $flight: String) {\n  jobDetail(\n    jobId: $jobId\n    locale: $locale\n    country: $country\n    candidateId: $candidateId\n    solVisitorId: $solVisitorId\n    flight: $flight\n  ) {\n    id\n    pageUrl\n    jobTitleSlug\n    applyUrl {\n      url\n      isExternal\n    }\n    isExpired\n    isConfidential\n    isClassified\n    accountNum\n    advertisementId\n    subAccount\n    showMoreJobs\n    adType\n    header {\n      banner {\n        bannerUrls {\n          large\n        }\n      }\n      salary {\n        max\n        min\n        type\n        extraInfo\n        currency\n        isVisible\n      }\n      logoUrls {\n        small\n        medium\n        large\n        normal\n      }\n      jobTitle\n      company {\n        name\n        url\n        slug\n        advertiserId\n      }\n      review {\n        rating\n        numberOfReviewer\n      }\n      expiration\n      postedDate\n      postedAt\n      isInternship\n    }\n    companyDetail {\n      companyWebsite\n      companySnapshot {\n        avgProcessTime\n        registrationNo\n        employmentAgencyPersonnelNumber\n        employmentAgencyNumber\n        telephoneNumber\n        workingHours\n        website\n        facebook\n        size\n        dressCode\n        nearbyLocations\n      }\n      companyOverview {\n        html\n      }\n      videoUrl\n      companyPhotos {\n        caption\n        url\n      }\n    }\n    jobDetail {\n      summary\n      jobDescription {\n        html\n      }\n      jobRequirement {\n        careerLevel\n        yearsOfExperience\n        qualification\n        fieldOfStudy\n        industryValue {\n          value\n          label\n        }\n        skills\n        employmentType\n        languages\n        postedDate\n        closingDate\n        jobFunctionValue {\n          code\n          name\n          children {\n            code\n            name\n          }\n        }\n        benefits\n      }\n      whyJoinUs\n    }\n    location {\n      location\n      locationId\n      omnitureLocationId\n    }\n    sourceCountry\n  }\n}\n", "variables": {"jobId": `${id}`,"country": "id","locale": "id","candidateId": "","solVisitorId": "69217709-bfc6-4502-ab46-4e7d01fce568"}}))
+    var jobDescription= resDetail.data.data.jobDetail?.jobDetail?.jobDescription?.html ?? '';
+    var jobModel = new JobstreetModel(
+      x.id, 
+      x.adType, 
+      x.categories.map(y => y.code), 
+      x.categories.map(y => y.name), 
+      x.companyMeta.id, 
+      x.companyMeta.name, 
+      x.companyMeta.isPrivate, 
+      '',
+      jobDescription,
+      x.employmentTypes.map(y => y.code), 
+      x.isClassified, 
+      x.isStandout, 
+      x.jobTitle, 
+      x.jobUrl, 
+      x.locations.map(y => y.name), 
+      x.postedAt, 
+      x.postingDuration, 
+      x.salaryRange.currency, 
+      x.salaryRange.min, 
+      x.salaryRange.max, 
+      x.salaryRange.period, 
+      x.salaryRange.term, 
+      x.sellingPoints)
+    e.description = jobDescription
+    await new Promise(resolve => setTimeout(resolve, 20000));
+    return jobModel;
+}
+
+function saveData(data) {
+  today = dayjs().format('YYYY-MM-DD')
+  const ws = fs.createWriteStream(`./Result/jobstreet_${today}.csv`);
+    fastcsv
+      .write(data, { headers: true })
+      .pipe(ws);
+  console.log('running sukses');
+}
+
+async function crawlingDetailData(){
+  var data = [];
+  for (const e of listId) {
+    var datum = await getDetailJob(e);
+    data.push(datum);
+  }
+  saveData(data);
+}
+
+function getJobIds(){
+  var a;
+}
+
 class JobstreetModel {
-  constructor(adType, categoriesCode, categoriesName, companyId, companyName, companyPrivate, companyDescription, description, employment, id, isClassified, isStandout, jobTitle, jobUrl, locations, postedAt, postingDuration, salarycurrency, salaryMin, salaryMax, salaryPeriod, salaryTerm, sellingPoints, jobDescription) {
+  constructor(id, adType, categoriesCode, categoriesName, companyId, companyName, companyPrivate, companyDescription, description, employment, isClassified, isStandout, jobTitle, jobUrl, locations, postedAt, postingDuration, salarycurrency, salaryMin, salaryMax, salaryPeriod, salaryTerm, sellingPoints, jobDescription) {
+    this.id = id;
     this.adType = adType;
     this.categoriesCode = categoriesCode;
     this.categoriesName = categoriesName;
@@ -92,7 +149,6 @@ class JobstreetModel {
     this.companyDescription = companyDescription;
     this.description = description;
     this.employment = employment;
-    this.id = id;
     this.isClassified = isClassified;
     this.isStandout = isStandout;
     this.jobTitle = jobTitle;
@@ -106,6 +162,5 @@ class JobstreetModel {
     this.salaryPeriod = salaryPeriod;
     this.salaryTerm = salaryTerm;
     this.sellingPoints = sellingPoints;
-
   }
 }
